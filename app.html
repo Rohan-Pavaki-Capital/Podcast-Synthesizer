@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Prompt Builder</title>
+  <style>
+    :root {
+      --bg: #fff4f8;
+      --card: #ffdfee;
+      --muted: #6b4353;
+      --accent: #ff79b0;
+      --accent-2: #ffb6d5;
+      --border: rgba(203, 102, 132, 0.15);
+    }
+
+    body {
+      font-family: Inter, Segoe UI, Roboto, Arial;
+      margin: 0;
+      background: linear-gradient(180deg, #fff7fb 0%, #fff1f6 100%);
+      color: #3b2430;
+    }
+
+    .wrap {
+      max-width: 1300px;
+      margin: 36px auto;
+      padding: 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.85));
+      border-radius: 12px;
+      box-shadow: 0 8px 40px rgba(203, 102, 132, 0.12);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 22px;
+      color: #3b2430;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input[type=text],
+    textarea,
+    select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: inherit;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    textarea { min-height: 90px; }
+
+    .full { grid-column: 1 / -1; }
+
+    .buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button {
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      border: none;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: inherit;
+      font-size: 14px;
+      transition: opacity 0.2s;
+    }
+
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    button.ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    /* ── 3-column model output grid ── */
+    .models-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .model-box {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.6);
+    }
+
+    .model-header {
+      padding: 10px 14px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .model-header .copy-btn {
+      background: rgba(255,255,255,0.25);
+      border: none;
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .model-header .copy-btn:hover { background: rgba(255,255,255,0.4); }
+
+    .model-body {
+      flex: 1;
+      padding: 14px;
+      font-size: 14px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 260px;
+      color: #3b2430;
+      overflow-y: auto;
+    }
+
+    .model-body.empty { color: var(--muted); font-style: italic; }
+
+    .model-body.loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-style: normal;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 3px solid rgba(255,121,176,0.3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      margin-top: 20px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      .models-grid { grid-template-columns: 1fr; }
+      form { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>Prompt Builder</h1>
+    <form id="promptForm">
+      <div>
+        <label for="role">Role</label>
+        <input id="role" name="role" type="text" placeholder="e.g., Senior DevOps Engineer" />
+      </div>
+
+      <div class="full">
+        <label for="context">Context</label>
+        <textarea id="context" name="context" placeholder="Provide background, constraints, or relevant info"></textarea>
+      </div>
+
+      <div class="full">
+        <label for="output">Requested Output</label>
+        <textarea id="output" name="output" placeholder="Describe the desired response or deliverable"></textarea>
+      </div>
+
+      <div class="full">
+        <button id="attachToggle" type="button" class="ghost">📎 Attach documents (up to 5)</button>
+        <input id="document" name="document" type="file" accept=".pdf,.docx,.doc,.txt" multiple
+          style="display:none;margin-top:8px;" />
+        <div id="docName" style="font-size:13px;color:var(--muted);margin-top:6px"></div>
+      </div>
+
+      <div class="full buttons">
+        <button id="generate" type="button">Send</button>
+        <button id="reset" type="button" class="ghost">Reset</button>
+      </div>
+    </form>
+
+    <!-- 3-column model responses -->
+    <div class="models-grid">
+      <div class="model-box" id="box-0">
+        <div class="model-header">
+          <span>openai / gpt-oss-120b</span>
+          <button class="copy-btn" data-idx="0">Copy</button>
+        </div>
+        <div class="model-body empty" id="body-0">Response will appear here…</div>
+      </div>
+
+      <div class="model-box" id="box-1">
+        <div class="model-header">
+          <span>deepseek-ai / DeepSeek-V4-Pro</span>
+          <button class="copy-btn" data-idx="1">Copy</button>
+        </div>
+        <div class="model-body empty" id="body-1">Response will appear here…</div>
+      </div>
+
+      <div class="model-box" id="box-2">
+        <div class="model-header">
+          <span>meta-llama / Llama-3.3-70B-Instruct-Turbo</span>
+          <button class="copy-btn" data-idx="2">Copy</button>
+        </div>
+        <div class="model-body empty" id="body-2">Response will appear here…</div>
+      </div>
+    </div>
+
+    <footer>Open <strong>http://127.0.0.1:5000</strong> in your browser and fill the fields.</footer>
+  </div>
+
+  <script>
+    const MODELS = [
+      'openai/gpt-oss-120b',
+      'deepseek-ai/DeepSeek-V4-Pro',
+      'meta-llama/Llama-3.3-70B-Instruct-Turbo',
+    ];
+
+    // Plain-text: strip common markdown tokens
+    function stripMarkdown(text) {
+      if (!text) return '';
+      return text
+        .replace(/```[\s\S]*?```/g, (m) => m.replace(/```\w*/g, '').trim()) // fenced code blocks → content only
+        .replace(/`([^`]+)`/g, '$1')                // inline code
+        .replace(/^#{1,6}\s+/gm, '')                // headings
+        .replace(/\*\*(.+?)\*\*/g, '$1')            // bold **
+        .replace(/__(.+?)__/g, '$1')                // bold __
+        .replace(/\*(.+?)\*/g, '$1')                // italic *
+        .replace(/_(.+?)_/g, '$1')                  // italic _
+        .replace(/~~(.+?)~~/g, '$1')                // strikethrough
+        .replace(/^\s*[-*+]\s+/gm, '• ')            // unordered list bullets
+        .replace(/^\s*\d+\.\s+/gm, (m) => m)        // keep numbered list numbers
+        .replace(/\[(.+?)\]\(.+?\)/g, '$1')         // links → label only
+        .replace(/!\[.*?\]\(.+?\)/g, '')             // images → remove
+        .replace(/^\s*>\s+/gm, '')                   // blockquotes
+        .replace(/^[-*_]{3,}\s*$/gm, '')             // horizontal rules
+        .replace(/\n{3,}/g, '\n\n')                  // collapse excess blank lines
+        .trim();
+    }
+
+    function get(id) { return document.getElementById(id).value || ''; }
+
+    function setLoading(on) {
+      for (let i = 0; i < 3; i++) {
+        const el = document.getElementById(`body-${i}`);
+        if (on) {
+          el.className = 'model-body loading';
+          el.innerHTML = '<span class="spinner"></span> Generating…';
+        } else {
+          el.className = 'model-body empty';
+          el.textContent = 'Response will appear here…';
+        }
+      }
+    }
+
+    async function generate() {
+      const role = get('role');
+      const context = get('context');
+      const output = get('output');
+      const fileInput = document.getElementById('document');
+      const files = (fileInput && fileInput.files) ? Array.from(fileInput.files) : [];
+
+      const btn = document.getElementById('generate');
+      btn.disabled = true;
+      btn.textContent = 'Generating…';
+      setLoading(true);
+
+      if (files.length > 5) {
+        alert('You can upload up to 5 documents.');
+        setLoading(false);
+        btn.disabled = false;
+        btn.textContent = 'Send';
+        return;
+      }
+
+      try {
+        const API_BASE = 'http://127.0.0.1:5000';
+        let res;
+        if (files.length > 0) {
+          const form = new FormData();
+          form.append('role', role);
+          form.append('context', context);
+          form.append('output', output);
+          files.forEach((file) => form.append('document', file));
+          res = await fetch(`${API_BASE}/generate`, { method: 'POST', mode: 'cors', body: form });
+        } else {
+          const payload = { role, context, output };
+          res = await fetch(`${API_BASE}/generate`, {
+            method: 'POST', mode: 'cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+        }
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: res.statusText }));
+          alert('Generation failed: ' + (err.error || res.statusText));
+          setLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        if (data.error) { alert('Error: ' + data.error); setLoading(false); return; }
+
+        // Populate the 3 boxes with plain text
+        MODELS.forEach((model, i) => {
+          const el = document.getElementById(`body-${i}`);
+          const raw = (data.responses && data.responses[model]) || '';
+          const plain = stripMarkdown(raw);
+          el.className = plain ? 'model-body' : 'model-body empty';
+          el.textContent = plain || 'No response received.';
+        });
+
+      } catch (e) {
+        alert('Request failed: ' + e.message);
+        setLoading(false);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send';
+      }
+    }
+
+    // Wire up buttons
+    document.getElementById('generate').addEventListener('click', generate);
+
+    document.getElementById('reset').addEventListener('click', () => {
+      document.getElementById('promptForm').reset();
+      document.getElementById('docName').textContent = '';
+      document.getElementById('document').style.display = 'none';
+      for (let i = 0; i < 3; i++) {
+        const el = document.getElementById(`body-${i}`);
+        el.className = 'model-body empty';
+        el.textContent = 'Response will appear here…';
+      }
+    });
+
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const idx = btn.dataset.idx;
+        const text = document.getElementById(`body-${idx}`).textContent;
+        if (!text || text === 'Response will appear here…') return alert('Nothing to copy yet.');
+        try {
+          await navigator.clipboard.writeText(text);
+          btn.textContent = 'Copied!';
+          setTimeout(() => btn.textContent = 'Copy', 1500);
+        } catch {
+          alert('Copy failed — try selecting and Ctrl+C manually.');
+        }
+      });
+    });
+
+    document.getElementById('attachToggle').addEventListener('click', () => {
+      const inp = document.getElementById('document');
+      inp.style.display = inp.style.display === 'none' ? 'block' : 'none';
+      if (inp.style.display === 'block') inp.click();
+    });
+
+    document.getElementById('document').addEventListener('change', (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) {
+        document.getElementById('docName').textContent = '';
+        return;
+      }
+      const names = files.slice(0, 5).map(f => f.name).join(', ');
+      const count = files.length;
+      document.getElementById('docName').textContent = `📄 Attached (${count}/5): ${names}`;
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') generate();
+    });
+  </script>
+</body>
+
+</html>

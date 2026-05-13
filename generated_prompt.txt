@@ -1,0 +1,21 @@
+Role: 
+
+Context:
+- no context provided -
+
+Requested Output:
+- no output description provided -
+
+
+Please produce the requested output using the information above. Provide the final response only.
+
+---MODEL RESPONSE---
+
+It looks like your message is missing some key details — the **context** and **requested output** fields are both empty.
+
+Could you please provide:
+
+1. **Context** – What is this about? What information should I work with?
+2. **Requested Output** – What would you like me to produce? (e.g., a summary, an essay, a list, code, etc.)
+
+I'm happy to help once I know what you need! 😊
