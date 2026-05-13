@@ -207,7 +207,7 @@
       </div>
 
       <div class="full">
-        <button id="attachToggle" type="button" class="ghost">📎 Attach documents (up to 5)</button>
+        <button id="attachToggle" type="button" class="ghost">📎 Attach documents</button>
         <input id="document" name="document" type="file" accept=".pdf,.docx,.doc,.txt" multiple
           style="display:none;margin-top:8px;" />
         <div id="docName" style="font-size:13px;color:var(--muted);margin-top:6px"></div>
@@ -314,7 +314,7 @@
       }
 
       try {
-        const API_BASE = 'http://127.0.0.1:5000';
+        const API_BASE = '';
         let res;
         if (files.length > 0) {
           const form = new FormData();
